@@ -49,6 +49,8 @@ SbKey SdlKeyToSbKey(const SDL_Keysym& keysym) {
       return kSbKeyHome;
     case SDL_SCANCODE_AUDIOPLAY:
       return kSbKeyMediaPlayPause;
+    case SDL_SCANCODE_PAUSE:
+      return kSbKeyPause;
     case SDL_SCANCODE_AUDIOREWIND:
       return kSbKeyMediaRewind;
     case SDL_SCANCODE_AUDIOFASTFORWARD:
@@ -70,8 +72,7 @@ SbKey SdlKeyToSbKey(const SDL_Keysym& keysym) {
   }
 
   const int scancode = static_cast<int>(keysym.scancode);
-  if (scancode == SDL_WEBOS_SCANCODE_BACK ||
-      scancode == SDL_WEBOS_SCANCODE_EXIT) {
+  if (scancode == SDL_WEBOS_SCANCODE_BACK) {
     return kSbKeyEscape;
   }
   // These are the key symbols observed on LG webOS TV hardware by the
@@ -692,6 +693,15 @@ ApplicationSdl::Event* ApplicationSdl::TranslateEvent(const SDL_Event& event) {
   }
 
   if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+    // The remote's dedicated Exit key stops the application; it must not be
+    // translated into Back/Escape like SDL_WEBOS_SCANCODE_BACK.
+    if (static_cast<int>(event.key.keysym.scancode) ==
+        SDL_WEBOS_SCANCODE_EXIT) {
+      if (event.type == SDL_KEYDOWN) {
+        Stop(0);
+      }
+      return nullptr;
+    }
     SbInputData* data = new SbInputData();
     std::memset(data, 0, sizeof(*data));
     data->window = window_;
