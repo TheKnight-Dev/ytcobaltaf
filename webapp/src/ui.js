@@ -107,6 +107,20 @@ export function userScriptStartUI() {
     if (nextRate === currentRate) return true;
 
     video.playbackRate = nextRate;
+
+    // Some platforms need a play/pause toggle to apply playbackRate changes.
+    // Verify the rate was applied after a short delay and retry if needed.
+    const targetRate = nextRate;
+    setTimeout(() => {
+      const actualRate = Number(video.playbackRate) || 1;
+      if (Math.abs(actualRate - targetRate) > 0.01 && video.readyState >= 2) {
+        video.pause();
+        video.playbackRate = targetRate;
+        video.play();
+        console.info('[ytaf] retry playbackRate fix:', actualRate, '->', targetRate);
+      }
+    }, 100);
+
     showNotification(`Playback speed: ${nextRate}x`, 1800, 'green');
     return true;
   }
